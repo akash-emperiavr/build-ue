@@ -1,1 +1,56 @@
-# add code here.
+name: Run PowerShell Script on Windows VM
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    env:
+      PROJECT_ID: walmart-421118
+      ZONE: us-central1-a
+      INSTANCE_NAME: windows-build-vm
+      BUILD_No: Build_ci_cd_4  # Modify this value to set BuildNumber
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Start GCP Windows VM
+        run: |
+          gcloud compute instances start $INSTANCE_NAME --zone $ZONE
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
+
+      - name: Fetch External IP of Windows VM
+        run: |
+          echo "Fetching external IP..."
+          EXTERNAL_IP=$(gcloud compute instances describe $INSTANCE_NAME --zone $ZONE --format='get(networkInterfaces[0].accessConfigs[0].natIP)')
+          echo "EXTERNAL_IP=$EXTERNAL_IP" >> $GITHUB_ENV
+
+      - name: Run PowerShell Script as Admin on Windows VM
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: "${{ env.EXTERNAL_IP }}"
+          username: "akash"
+          key: ${{ secrets.GCP_SSH_PRIVATE_KEY }}
+          password: ${{ secrets.GCP_SSH_PASSWORD }}
+          script: |
+            echo "Setting Build Number in a file"
+            powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "& { Set-Content -Path C:\Projects\BuildNumber.txt -Value '${{ env.BUILD_No }}' }"
+
+            echo "Running script as Administrator"
+            powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Start-Process powershell.exe -ArgumentList '-NoProfile -ExecutionPolicy Bypass -File C:\Projects\test-file.ps1' -Verb RunAs"
+
+      - name: Shut Down Windows VM
+        if: always()
+        run: |
+          gcloud compute instances stop $INSTANCE_NAME --zone $ZONE
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
+
+      - name: Calling module 2 git action
+        run: echo "https://github.com/akash-emperiavr/walmart-build-deployment/actions"
