@@ -54,7 +54,7 @@ jobs:
             powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "& { Set-Content -Path C:\Projects\BuildNumber.txt -Value '${{ env.BUILD_No }}' }"
 
             echo "Running script with live logs..."
-            powershell.exe -NoProfile -ExecutionPolicy Bypass -File C:\Projects\test-file.ps1 2>&1 | Tee-Object -FilePath C:\Projects\script-log.txt
+            powershell.exe -NoProfile -ExecutionPolicy Bypass -File C:\Projects\Build-script.ps1 2>&1 | Tee-Object -FilePath C:\Projects\Build-script-log.txt
 
             echo "Live log output saved at C:\Projects\script-log.txt"
 
