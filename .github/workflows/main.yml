@@ -50,9 +50,9 @@ jobs:
             password: ${{ secrets.GCP_SSH_PASSWORD }}
             script: |
               powershell
-              echo "Checking if test-file.ps1 exists..."
-              if (!(Test-Path "C:\Projects\test-file.ps1")) {
-                  echo "❌ ERROR: test-file.ps1 NOT found!"
+              echo "Checking if Build-script.ps1 exists..."
+              if (!(Test-Path "C:\Projects\Build-script.ps1")) {
+                  echo "❌ ERROR: Build-script.ps1 NOT found!"
                   exit 1
               }
 
@@ -60,7 +60,7 @@ jobs:
               echo '${{ env.BUILD_No }}' | Out-File -FilePath C:\Projects\BuildNumber.txt -Encoding utf8 -Force
 
               echo "Creating a Scheduled Task to Run as Admin..."
-              $Action = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-NoProfile -ExecutionPolicy Bypass -File C:\Projects\test-file.ps1"
+              $Action = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-NoProfile -ExecutionPolicy Bypass -File C:\Projects\Build-script.ps1"
               $Trigger = New-ScheduledTaskTrigger -Once -At (Get-Date).AddSeconds(10)
               $Principal = New-ScheduledTaskPrincipal -UserId "Administrator" -LogonType Interactive -RunLevel Highest
               Register-ScheduledTask -TaskName "RunBuildScript" -Action $Action -Trigger $Trigger -Principal $Principal -Force
