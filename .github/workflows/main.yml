@@ -51,15 +51,21 @@ jobs:
           echo "❌ Failed to fetch external IP!"
           exit 1
 
+      - name: Setup SSH Key for GitHub Actions
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.GCP_SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ env.EXTERNAL_IP }} >> ~/.ssh/known_hosts
+
       - name: Transfer Build Number File to Windows VM
         run: |
           echo '${{ env.BUILD_No }}' > BuildNumber.txt
           gcloud compute scp BuildNumber.txt $INSTANCE_NAME:C:\Projects\BuildNumber.txt --zone $ZONE --quiet
 
-      - name: Run PowerShell Script as Admin
+      - name: Run PowerShell Script on Windows VM
         run: |
-          gcloud compute ssh $INSTANCE_NAME --zone $ZONE --command ^
-            "powershell -ExecutionPolicy Bypass -NoProfile -File C:\Projects\Build-script.ps1"
+          ssh akash@${{ env.EXTERNAL_IP }} "powershell -ExecutionPolicy Bypass -NoProfile -File C:\Projects\Build-script.ps1"
       
       - name: Shut Down Windows VM
         if: always()
