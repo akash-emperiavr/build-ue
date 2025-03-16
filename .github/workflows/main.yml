@@ -44,11 +44,11 @@ jobs:
 
       - name: Run PowerShell Script as Admin on Windows VM
         uses: appleboy/ssh-action@v1.0.3
-        shell: powershell
         with:
             host: "${{ env.EXTERNAL_IP }}"
             username: "akash"
             password: ${{ secrets.GCP_SSH_PASSWORD }}
+            shell: powershell
             script: |
               echo "Checking if test-file.ps1 exists..."
               if (!(Test-Path "C:\Projects\test-file.ps1")) {
