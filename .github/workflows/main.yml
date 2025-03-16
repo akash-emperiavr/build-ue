@@ -48,35 +48,45 @@ jobs:
             host: "${{ env.EXTERNAL_IP }}"
             username: "akash"
             password: ${{ secrets.GCP_SSH_PASSWORD }}
-            shell: powershell
             script: |
               echo "Checking if test-file.ps1 exists..."
               if (!(Test-Path "C:\Projects\test-file.ps1")) {
                   echo "❌ ERROR: test-file.ps1 NOT found!"
                   exit 1
               }
-              
+
               echo "Setting Build Number in a file..."
               echo '${{ env.BUILD_No }}' | Out-File -FilePath C:\Projects\BuildNumber.txt -Encoding utf8 -Force
 
               echo "Creating a Scheduled Task to Run as Admin..."
               $Action = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-NoProfile -ExecutionPolicy Bypass -File C:\Projects\test-file.ps1"
               $Trigger = New-ScheduledTaskTrigger -Once -At (Get-Date).AddSeconds(10)
-              $Principal = New-ScheduledTaskPrincipal -UserId "Administrator" -LogonType Password -RunLevel Highest
+              $Principal = New-ScheduledTaskPrincipal -UserId "Administrator" -LogonType Interactive -RunLevel Highest
               Register-ScheduledTask -TaskName "RunBuildScript" -Action $Action -Trigger $Trigger -Principal $Principal -Force
 
               echo "Running Scheduled Task as Admin..."
               Start-ScheduledTask -TaskName "RunBuildScript"
-              
+
               echo "Waiting for script to execute..."
               Start-Sleep -Seconds 30
 
-              echo "Checking script execution logs..."
+              echo "Checking Task Execution Status..."
+              $TaskStatus = Get-ScheduledTask -TaskName "RunBuildScript" | Select-Object -ExpandProperty State
+              echo "Task Status: $TaskStatus"
+
+              if ($TaskStatus -eq "Running") {
+                  echo "⚠️ Task is still running. Waiting longer..."
+                  Start-Sleep -Seconds 30
+              }
+
+              echo "Fetching script logs..."
               if (Test-Path "C:\Projects\script-log.txt") {
                   echo "✅ Script completed successfully!"
                   Get-Content C:\Projects\script-log.txt
               } else {
-                  echo "❌ Script did not create a log file. Check execution."
+                  echo "❌ Script did not create a log file. Checking task errors..."
+                  Get-ScheduledTask -TaskName "RunBuildScript" | Format-List
+                  exit 1
               }
 
       - name: Shut Down Windows VM
