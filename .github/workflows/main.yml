@@ -33,69 +33,35 @@ jobs:
       - name: Start GCP Windows VM
         run: |
           gcloud compute instances start $INSTANCE_NAME --zone $ZONE
-        env:
-          GOOGLE_APPLICATION_CREDENTIALS: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
+          sleep 30  # Wait for the VM to start
 
       - name: Fetch External IP of Windows VM
         run: |
           echo "Fetching external IP..."
-          EXTERNAL_IP=$(gcloud compute instances describe $INSTANCE_NAME --zone $ZONE --format='get(networkInterfaces[0].accessConfigs[0].natIP)')
-          echo "EXTERNAL_IP=$EXTERNAL_IP" >> $GITHUB_ENV
+          for i in {1..10}; do
+            EXTERNAL_IP=$(gcloud compute instances describe $INSTANCE_NAME --zone $ZONE --format='get(networkInterfaces[0].accessConfigs[0].natIP)')
+            if [[ -n "$EXTERNAL_IP" ]]; then
+              echo "EXTERNAL_IP=$EXTERNAL_IP" >> $GITHUB_ENV
+              echo "✅ External IP found: $EXTERNAL_IP"
+              exit 0
+            fi
+            echo "Waiting for external IP..."
+            sleep 10
+          done
+          echo "❌ Failed to fetch external IP!"
+          exit 1
 
-      - name: Run PowerShell Script as Admin on Windows VM
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-            host: "${{ env.EXTERNAL_IP }}"
-            username: "akash"
-            password: ${{ secrets.GCP_SSH_PASSWORD }}
-            script: |
-              powershell
-              echo "Checking if Build-script.ps1 exists..."
-              if (!(Test-Path "C:\Projects\Build-script.ps1")) {
-                  echo "❌ ERROR: Build-script.ps1 NOT found!"
-                  exit 1
-              }
+      - name: Transfer Build Number File to Windows VM
+        run: |
+          echo '${{ env.BUILD_No }}' > BuildNumber.txt
+          gcloud compute scp BuildNumber.txt $INSTANCE_NAME:C:\Projects\BuildNumber.txt --zone $ZONE --quiet
 
-              echo "Setting Build Number in a file..."
-              echo '${{ env.BUILD_No }}' | Out-File -FilePath C:\Projects\BuildNumber.txt -Encoding utf8 -Force
-
-              echo "Creating a Scheduled Task to Run as Admin..."
-              $Action = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-NoProfile -ExecutionPolicy Bypass -File C:\Projects\Build-script.ps1"
-              $Trigger = New-ScheduledTaskTrigger -Once -At (Get-Date).AddSeconds(10)
-              $Principal = New-ScheduledTaskPrincipal -UserId "Administrator" -LogonType Interactive -RunLevel Highest
-              Register-ScheduledTask -TaskName "RunBuildScript" -Action $Action -Trigger $Trigger -Principal $Principal -Force
-
-              echo "Running Scheduled Task as Admin..."
-              Start-ScheduledTask -TaskName "RunBuildScript"
-
-              echo "Waiting for script to execute..."
-              Start-Sleep -Seconds 30
-
-              echo "Checking Task Execution Status..."
-              $TaskStatus = Get-ScheduledTask -TaskName "RunBuildScript" | Select-Object -ExpandProperty State
-              echo "Task Status: $TaskStatus"
-
-              if ($TaskStatus -eq "Running") {
-                  echo "⚠️ Task is still running. Waiting longer..."
-                  Start-Sleep -Seconds 30
-              }
-
-              echo "Fetching script logs..."
-              if (Test-Path "C:\Projects\script-log.txt") {
-                  echo "✅ Script completed successfully!"
-                  Get-Content C:\Projects\script-log.txt
-              } else {
-                  echo "❌ Script did not create a log file. Checking task errors..."
-                  Get-ScheduledTask -TaskName "RunBuildScript" | Format-List
-                  exit 1
-              }
-
+      - name: Run PowerShell Script as Admin
+        run: |
+          gcloud compute ssh $INSTANCE_NAME --zone $ZONE --command ^
+            "powershell -ExecutionPolicy Bypass -NoProfile -File C:\Projects\Build-script.ps1"
+      
       - name: Shut Down Windows VM
         if: always()
         run: |
           gcloud compute instances stop $INSTANCE_NAME --zone $ZONE
-        env:
-          GOOGLE_APPLICATION_CREDENTIALS: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
-
-      - name: Calling module 2 git action
-        run: echo "https://github.com/akash-emperiavr/walmart-build-deployment/actions"
