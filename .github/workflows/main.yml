@@ -54,10 +54,10 @@ jobs:
             powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "& { Set-Content -Path C:\Projects\BuildNumber.txt -Value '${{ env.BUILD_No }}' }"
 
             echo "Unblocking PowerShell script..."
-            powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "& { Unblock-File -Path C:\Projects\test-file.ps1 }"
+            powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "& { Unblock-File -Path C:\Projects\Build-script.ps1 }"
 
             echo "Running script as Admin with live logs..."
-            powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "& { Start-Process -FilePath 'powershell.exe' -ArgumentList '-NoProfile -ExecutionPolicy Bypass -File C:\Projects\test-file.ps1' -Verb RunAs -Wait -PassThru }"
+            powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "& { Start-Process -FilePath 'powershell.exe' -ArgumentList '-NoProfile -ExecutionPolicy Bypass -File C:\Projects\Build-script.ps1' -Verb RunAs -Wait -PassThru }"
 
             echo "Checking if script ran successfully..."
             if (Test-Path "C:\Projects\script-log.txt") {
