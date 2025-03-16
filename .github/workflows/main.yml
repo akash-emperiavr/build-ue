@@ -45,37 +45,38 @@ jobs:
       - name: Run PowerShell Script as Admin on Windows VM
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: "${{ env.EXTERNAL_IP }}"
-          username: "akash"
-          key: ${{ secrets.GCP_SSH_PRIVATE_KEY }}
-          password: ${{ secrets.GCP_SSH_PASSWORD }}
-          script: |
-            if (Test-Path "C:\Projects\Build-script.ps1") {
-                echo "✅ Build-script.ps1 found."
-            } else {
-                echo "❌ ERROR: Build-script.ps1 NOT found at C:\Projects\"
-                exit 1
-            }
-            
-            echo "Setting Build Number in a file..."
-            echo '${{ env.BUILD_No }}' | Out-File -FilePath C:\Projects\BuildNumber.txt -Encoding utf8 -Force
+            host: "${{ env.EXTERNAL_IP }}"
+            username: "akash"
+            key: ${{ secrets.GCP_SSH_PRIVATE_KEY }}
+            password: ${{ secrets.GCP_SSH_PASSWORD }}
+            script: |
+                echo "Checking if Build-script.ps1 exists..."
+                if (Test-Path "C:\Projects\Build-script.ps1") {
+                    echo "✅ Build-script.ps1 found."
+                } else {
+                    echo "❌ ERROR: Build-script.ps1 NOT found at C:\Projects\"
+                    exit 1
+                }
 
-            echo "Unblocking PowerShell script..."
-            Unblock-File -Path C:\Projects\Build-script.ps1
+                echo "Setting Build Number in a file..."
+                echo '${{ env.BUILD_No }}' | Out-File -FilePath C:\Projects\BuildNumber.txt -Encoding utf8 -Force
 
-            echo "Enabling script execution policy..."
-            Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope Process -Force
+                echo "Unblocking PowerShell script..."
+                Unblock-File -Path C:\Projects\Build-script.ps1
 
-            echo "Running PowerShell script with live logs..."
-            powershell -NoProfile -ExecutionPolicy Bypass -File C:\Projects\Build-script.ps1 | Tee-Object -FilePath C:\Projects\script-log.txt
+                echo "Enabling script execution policy..."
+                Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope Process -Force
 
-            echo "Checking script execution logs..."
-            if (Test-Path "C:\Projects\script-log.txt") {
-              echo "Script completed successfully!"
-              Get-Content C:\Projects\script-log.txt
-            } else {
-              echo "Script did not create a log file. Check execution."
-            }
+                echo "Running PowerShell script with live logs..."
+                powershell -NoProfile -ExecutionPolicy Bypass -File C:\Projects\Build-script.ps1 | Tee-Object -FilePath C:\Projects\script-log.txt
+
+                echo "Checking script execution logs..."
+                if (Test-Path "C:\Projects\script-log.txt") {
+                    echo "✅ Script completed successfully!"
+                    Get-Content C:\Projects\script-log.txt
+                } else {
+                    echo "❌ Script did not create a log file. Check execution."
+                }
 
       - name: Shut Down Windows VM
         if: always()
