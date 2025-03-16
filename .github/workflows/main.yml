@@ -44,14 +44,15 @@ jobs:
 
       - name: Run PowerShell Script as Admin on Windows VM
         uses: appleboy/ssh-action@v1.0.3
+        shell: powershell
         with:
             host: "${{ env.EXTERNAL_IP }}"
             username: "akash"
             password: ${{ secrets.GCP_SSH_PASSWORD }}
             script: |
-              echo "Checking if Build-script.ps1 exists..."
-              if (!(Test-Path "C:\Projects\Build-script.ps1")) {
-                  echo "❌ ERROR: Build-script.ps1 NOT found!"
+              echo "Checking if test-file.ps1 exists..."
+              if (!(Test-Path "C:\Projects\test-file.ps1")) {
+                  echo "❌ ERROR: test-file.ps1 NOT found!"
                   exit 1
               }
               
@@ -59,7 +60,7 @@ jobs:
               echo '${{ env.BUILD_No }}' | Out-File -FilePath C:\Projects\BuildNumber.txt -Encoding utf8 -Force
 
               echo "Creating a Scheduled Task to Run as Admin..."
-              $Action = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-NoProfile -ExecutionPolicy Bypass -File C:\Projects\Build-script.ps1"
+              $Action = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-NoProfile -ExecutionPolicy Bypass -File C:\Projects\test-file.ps1"
               $Trigger = New-ScheduledTaskTrigger -Once -At (Get-Date).AddSeconds(10)
               $Principal = New-ScheduledTaskPrincipal -UserId "Administrator" -LogonType Password -RunLevel Highest
               Register-ScheduledTask -TaskName "RunBuildScript" -Action $Action -Trigger $Trigger -Principal $Principal -Force
@@ -77,7 +78,7 @@ jobs:
               } else {
                   echo "❌ Script did not create a log file. Check execution."
               }
-                  
+
       - name: Shut Down Windows VM
         if: always()
         run: |
