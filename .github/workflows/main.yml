@@ -49,6 +49,7 @@ jobs:
             username: "akash"
             password: ${{ secrets.GCP_SSH_PASSWORD }}
             script: |
+              powershell
               echo "Checking if test-file.ps1 exists..."
               if (!(Test-Path "C:\Projects\test-file.ps1")) {
                   echo "❌ ERROR: test-file.ps1 NOT found!"
