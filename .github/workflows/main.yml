@@ -50,6 +50,13 @@ jobs:
           key: ${{ secrets.GCP_SSH_PRIVATE_KEY }}
           password: ${{ secrets.GCP_SSH_PASSWORD }}
           script: |
+            if (Test-Path "C:\Projects\Build-script.ps1") {
+                echo "✅ Build-script.ps1 found."
+            } else {
+                echo "❌ ERROR: Build-script.ps1 NOT found at C:\Projects\"
+                exit 1
+            }
+            
             echo "Setting Build Number in a file..."
             echo '${{ env.BUILD_No }}' | Out-File -FilePath C:\Projects\BuildNumber.txt -Encoding utf8 -Force
 
