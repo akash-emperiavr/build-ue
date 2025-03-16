@@ -54,8 +54,8 @@ jobs:
       - name: Setup SSH Key for GitHub Actions
         run: |
           mkdir -p ~/.ssh
-          echo "${{ secrets.GCP_SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
+          echo "${{ secrets.GCP_SSH_PRIVATE_KEY }}" > ~/.ssh/google_compute_engine
+          chmod 600 ~/.ssh/google_compute_engine
           ssh-keyscan -H ${{ env.EXTERNAL_IP }} >> ~/.ssh/known_hosts
 
       - name: Transfer Build Number File to Windows VM
