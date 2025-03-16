@@ -59,16 +59,19 @@ jobs:
           chmod 655 ~/.ssh/google_compute_engine*
           ssh-keyscan -H ${{ env.EXTERNAL_IP }} >> ~/.ssh/known_hosts
 
-      - name: Transfer Build Number File to Windows VM
-        run: |
-          echo '${{ env.BUILD_No }}' > BuildNumber.txt
-          gcloud compute scp BuildNumber.txt $INSTANCE_NAME:C:\Projects\BuildNumber.txt --zone $ZONE --quiet
+      - name: Run PowerShell Script using WinRM
+        uses: microsoft/winrm-action@v1
+        with:
+          host: "${{ env.EXTERNAL_IP }}"
+          username: "akash"
+          password: "${{ secrets.GCP_SSH_PASSWORD }}"
+          script: |
+            powershell -ExecutionPolicy Bypass -NoProfile -File C:\Projects\test-file.ps1
 
-      - name: Run PowerShell Script on Windows VM
-        run: |
-          ssh -o StrictHostKeyChecking=no akash@${{ env.EXTERNAL_IP }} "powershell -ExecutionPolicy Bypass -NoProfile -File C:\Projects\Build-script.ps1"
-      
       - name: Shut Down Windows VM
         if: always()
         run: |
           gcloud compute instances stop $INSTANCE_NAME --zone $ZONE
+
+      - name: Calling module 2 git action
+        run: echo "https://github.com/akash-emperiavr/walmart-build-deployment/actions"
