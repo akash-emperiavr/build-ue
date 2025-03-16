@@ -65,7 +65,7 @@ jobs:
 
       - name: Run PowerShell Script on Windows VM
         run: |
-          ssh akash@${{ env.EXTERNAL_IP }} "powershell -ExecutionPolicy Bypass -NoProfile -File C:\Projects\Build-script.ps1"
+          ssh -o StrictHostKeyChecking=no akash@${{ env.EXTERNAL_IP }} "powershell -ExecutionPolicy Bypass -NoProfile -File C:\Projects\Build-script.ps1"
       
       - name: Shut Down Windows VM
         if: always()
