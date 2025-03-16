@@ -53,10 +53,19 @@ jobs:
             echo "Setting Build Number in a file"
             powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "& { Set-Content -Path C:\Projects\BuildNumber.txt -Value '${{ env.BUILD_No }}' }"
 
-            echo "Running script with live logs..."
-            powershell.exe -NoProfile -ExecutionPolicy Bypass -File C:\Projects\Build-script.ps1 2>&1 | Tee-Object -FilePath C:\Projects\Build-script-log.txt
+            echo "Unblocking PowerShell script..."
+            powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "& { Unblock-File -Path C:\Projects\test-file.ps1 }"
 
-            echo "Live log output saved at C:\Projects\script-log.txt"
+            echo "Running script as Admin with live logs..."
+            powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "& { Start-Process -FilePath 'powershell.exe' -ArgumentList '-NoProfile -ExecutionPolicy Bypass -File C:\Projects\test-file.ps1' -Verb RunAs -Wait -PassThru }"
+
+            echo "Checking if script ran successfully..."
+            if (Test-Path "C:\Projects\script-log.txt") {
+              echo "Script completed successfully!"
+              type C:\Projects\script-log.txt
+            } else {
+              echo "Script did not create a log file. Check execution."
+            }
 
       - name: Shut Down Windows VM
         if: always()
