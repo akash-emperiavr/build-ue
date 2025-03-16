@@ -56,17 +56,13 @@ jobs:
           mkdir -p ~/.ssh
           echo "${{ secrets.GCP_SSH_PRIVATE_KEY }}" > ~/.ssh/google_compute_engine
           echo "${{ secrets.GCP_SSH_PRIVATE_KEY_PUB }}" > ~/.ssh/google_compute_engine.pub
-          chmod 655 ~/.ssh/google_compute_engine*
+          chmod 600 ~/.ssh/google_compute_engine
+          chmod 644 ~/.ssh/google_compute_engine.pub
           ssh-keyscan -H ${{ env.EXTERNAL_IP }} >> ~/.ssh/known_hosts
 
-      - name: Run PowerShell Script using WinRM
-        uses: microsoft/winrm-action@v1
-        with:
-          host: "${{ env.EXTERNAL_IP }}"
-          username: "akash"
-          password: "${{ secrets.GCP_SSH_PASSWORD }}"
-          script: |
-            powershell -ExecutionPolicy Bypass -NoProfile -File C:\Projects\test-file.ps1
+      - name: Debug SSH Connection
+        run: |
+          ssh -v -i ~/.ssh/google_compute_engine -o StrictHostKeyChecking=no akash@${{ env.EXTERNAL_IP }} "echo SSH Connected Successfully!"
 
       - name: Shut Down Windows VM
         if: always()
