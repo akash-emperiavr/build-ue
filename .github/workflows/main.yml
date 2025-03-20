@@ -5,14 +5,14 @@ on:
     branches:
       - main
 
+env:  # Define environment variables globally
+  PROJECT_ID: walmart-421118
+  ZONE: us-central1-a
+  INSTANCE_NAME: windows-build-vm
+
 jobs:
   deploy:
     runs-on: ubuntu-latest  # Run these steps on a GitHub-hosted Ubuntu runner
-
-    env:
-      PROJECT_ID: walmart-421118
-      ZONE: us-central1-a
-      INSTANCE_NAME: windows-build-vm
 
     steps:
       - name: Checkout Repository
