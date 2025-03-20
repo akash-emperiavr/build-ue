@@ -7,13 +7,12 @@ on:
 
 jobs:
   deploy:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest  # Run these steps on a GitHub-hosted Ubuntu runner
 
     env:
       PROJECT_ID: walmart-421118
       ZONE: us-central1-a
       INSTANCE_NAME: windows-build-vm
-      BUILD_No: Build_ci_cd_4  # Modify this value to set BuildNumber
 
     steps:
       - name: Checkout Repository
@@ -22,52 +21,48 @@ jobs:
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v1
         with:
-            credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
+          credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
 
       - name: Set up Google Cloud SDK
         uses: google-github-actions/setup-gcloud@v1
         with:
-          project_id: ${{ secrets.GCP_PROJECT_ID }}
+          project_id: ${{ env.PROJECT_ID }}
           export_default_credentials: true
 
       - name: Start GCP Windows VM
         run: |
           gcloud compute instances start $INSTANCE_NAME --zone $ZONE
-          sleep 30  # Wait for the VM to start
+          sleep 60  # Wait for Windows to fully boot up
 
       - name: Fetch External IP of Windows VM
         run: |
-          echo "Fetching external IP..."
-          for i in {1..10}; do
-            EXTERNAL_IP=$(gcloud compute instances describe $INSTANCE_NAME --zone $ZONE --format='get(networkInterfaces[0].accessConfigs[0].natIP)')
-            if [[ -n "$EXTERNAL_IP" ]]; then
-              echo "EXTERNAL_IP=$EXTERNAL_IP" >> $GITHUB_ENV
-              echo "✅ External IP found: $EXTERNAL_IP"
-              exit 0
-            fi
-            echo "Waiting for external IP..."
-            sleep 10
-          done
-          echo "❌ Failed to fetch external IP!"
-          exit 1
+          EXTERNAL_IP=$(gcloud compute instances describe $INSTANCE_NAME --zone $ZONE --format='get(networkInterfaces[0].accessConfigs[0].natIP)')
+          echo "EXTERNAL_IP=$EXTERNAL_IP" >> $GITHUB_ENV
+          echo "✅ External IP found: $EXTERNAL_IP"
 
-      - name: Setup SSH Key for GitHub Actions
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.GCP_SSH_PRIVATE_KEY }}" > ~/.ssh/google_compute_engine
-          echo "${{ secrets.GCP_SSH_PRIVATE_KEY_PUB }}" > ~/.ssh/google_compute_engine.pub
-          chmod 600 ~/.ssh/google_compute_engine
-          chmod 644 ~/.ssh/google_compute_engine.pub
-          ssh-keyscan -H ${{ env.EXTERNAL_IP }} >> ~/.ssh/known_hosts
+  run_script:
+    needs: deploy
+    runs-on: self-hosted  # Runs on the self-hosted Windows runner in the VM
 
-      - name: Debug SSH Connection
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Run PowerShell Script on Windows VM
         run: |
-          ssh -v -i ~/.ssh/google_compute_engine -o StrictHostKeyChecking=no akash@${{ env.EXTERNAL_IP }} "echo SSH Connected Successfully!"
+          powershell -ExecutionPolicy Bypass -NoProfile -File C:\Projects\test-file.ps1
+
+  shutdown_vm:
+    needs: run_script
+    runs-on: ubuntu-latest
+    if: always()  # Ensures VM shuts down even if script fails
+
+    steps:
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v1
+        with:
+          credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
 
       - name: Shut Down Windows VM
-        if: always()
         run: |
           gcloud compute instances stop $INSTANCE_NAME --zone $ZONE
-
-      - name: Calling module 2 git action
-        run: echo "https://github.com/akash-emperiavr/walmart-build-deployment/actions"
