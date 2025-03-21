@@ -52,9 +52,9 @@ jobs:
       - name: Run PowerShell Script on Windows VM as Administrator
         run: |
           echo "Setting Build Number in a file"
-          runas /user:Administrator "powershell -ExecutionPolicy Bypass -Command `"Set-Content -Path C:\Projects\BuildNumber.txt -Value '${{ env.BUILD_No }}'`""
+          powershell -ExecutionPolicy Bypass -Command `"Set-Content -Path C:\Projects\BuildNumber.txt -Value '${{ env.BUILD_No }}'`"
           echo "Running script as Admin"
-          runas /user:Administrator "powershell -ExecutionPolicy Bypass -File C:\Scripts\Build-script.ps1"
+          powershell -ExecutionPolicy Bypass -File C:\Scripts\Build-script.ps1
 
   shutdown_vm:
     needs: run_script

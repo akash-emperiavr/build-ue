@@ -1,8 +1,20 @@
+# Check if script is running as Administrator
+$adminCheck = [System.Security.Principal.WindowsPrincipal]`
+  [System.Security.Principal.WindowsIdentity]::GetCurrent()
+if (-not $adminCheck.IsInRole([System.Security.Principal.WindowsBuiltInRole]::Administrator)) {
+    # Relaunch as Administrator
+    Start-Process -FilePath "powershell.exe" -ArgumentList "-ExecutionPolicy Bypass -NoProfile -File `"$PSCommandPath`"" -Verb RunAs
+    exit
+}
+
+# Your main script starts here
+Write-Output "Running as Administrator!"
+
 # Define Variables
 $repoUrl = "git@github.com:EmperiaLtd/emperia-unreal.git"
 $projectDir = "C:\Projects"
 $fileToCopy = "$projectDir\global.json"
-$BuildNumber = "Build_ci_cd_4"
+$BuildNumber = Get-Content "C:\Projects\BuildNumber.txt"
 $FolderPath = "$projectDir\test_build"
 $buildDir = "$FolderPath\$BuildNumber"
 
