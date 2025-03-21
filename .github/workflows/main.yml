@@ -49,12 +49,12 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Run PowerShell Script on Windows VM
+      - name: Run PowerShell Script on Windows VM as Administrator
         run: |
           echo "Setting Build Number in a file"
-          psexec -accepteula -h -s powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "& { Set-Content -Path C:\Projects\BuildNumber.txt -Value '${{ env.BUILD_No }}' }"
-          echo "Running script"
-          psexec -accepteula -h -s powershell -ExecutionPolicy Bypass -NoProfile -File C:\Projects\Build-script.ps1
+          Start-Process powershell.exe -ArgumentList "-ExecutionPolicy Bypass -NoProfile -Command `"Set-Content -Path C:\Projects\BuildNumber.txt -Value '${{ env.BUILD_No }}'`"" -Verb RunAs
+          echo "Running script as Admin"
+          Start-Process powershell.exe -ArgumentList "-ExecutionPolicy Bypass -NoProfile -File C:\Projects\Build-script.ps1" -Verb RunAs
 
   shutdown_vm:
     needs: run_script
