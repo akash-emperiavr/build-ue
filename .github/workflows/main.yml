@@ -9,6 +9,7 @@ env:  # Define environment variables globally
   PROJECT_ID: walmart-421118
   ZONE: us-central1-a
   INSTANCE_NAME: windows-build-vm
+  BUILD_No: Build_ci_cd_8  # Modify this value to set BuildNumber
 
 jobs:
   deploy:
@@ -50,7 +51,10 @@ jobs:
 
       - name: Run PowerShell Script on Windows VM
         run: |
-          powershell -ExecutionPolicy Bypass -NoProfile -File C:\Projects\test-file.ps1
+          echo "Setting Build Number in a file"
+          powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "& { Set-Content -Path C:\Projects\BuildNumber.txt -Value '${{ env.BUILD_No }}' }"
+          echo "Running script"
+          powershell -ExecutionPolicy Bypass -NoProfile -File C:\Projects\Build-script.ps1
 
   shutdown_vm:
     needs: run_script
