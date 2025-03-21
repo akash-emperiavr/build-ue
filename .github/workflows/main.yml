@@ -52,9 +52,9 @@ jobs:
       - name: Run PowerShell Script on Windows VM
         run: |
           echo "Setting Build Number in a file"
-          powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "& { Set-Content -Path C:\Projects\BuildNumber.txt -Value '${{ env.BUILD_No }}' }"
+          psexec -accepteula -h -s powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "& { Set-Content -Path C:\Projects\BuildNumber.txt -Value '${{ env.BUILD_No }}' }"
           echo "Running script"
-          powershell -ExecutionPolicy Bypass -NoProfile -File C:\Projects\Build-script.ps1
+          psexec -accepteula -h -s powershell -ExecutionPolicy Bypass -NoProfile -File C:\Projects\Build-script.ps1
 
   shutdown_vm:
     needs: run_script
