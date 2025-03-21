@@ -54,7 +54,7 @@ jobs:
           echo "Setting Build Number in a file"
           powershell -ExecutionPolicy Bypass -Command `"Set-Content -Path C:\Projects\BuildNumber.txt -Value '${{ env.BUILD_No }}'`"
           echo "Running script as Admin"
-          powershell -ExecutionPolicy Bypass -File C:\Projects\Build-script.ps1
+          powershell -ExecutionPolicy Bypass -Command "Start-Process -FilePath 'powershell.exe' -ArgumentList '-ExecutionPolicy Bypass -NoProfile -File C:\Projects\Build-script.ps1' -Verb RunAs -Wait"
 
   shutdown_vm:
     needs: run_script
