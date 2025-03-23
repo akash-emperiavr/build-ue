@@ -9,7 +9,7 @@ env:  # Define environment variables globally
   PROJECT_ID: walmart-421118
   ZONE: us-central1-a
   INSTANCE_NAME: windows-build-vm
-  BUILD_No: Build_ci_cd_9  # Modify this value to set BuildNumber
+  BUILD_No: Build_ci_cd_10  # Modify this value to set BuildNumber
 
 jobs:
   deploy:
@@ -54,7 +54,7 @@ jobs:
           echo "Setting Build Number in a file"
           powershell -ExecutionPolicy Bypass -Command `"Set-Content -Path C:\Projects\BuildNumber.txt -Value '${{ env.BUILD_No }}'`"
           echo "Running script as Admin"
-          powershell -ExecutionPolicy Bypass -Command "Start-Process -FilePath 'powershell.exe' -ArgumentList '-ExecutionPolicy Bypass -NoProfile -File C:\Projects\Build-script.ps1' -Verb RunAs -Wait"
+          powershell -ExecutionPolicy Bypass -Command "Start-Process -FilePath 'powershell.exe' -ArgumentList '-ExecutionPolicy Bypass -NoProfile -File C:\Projects\Build-script.ps1' -Verb RunAs -Wait -NoNewWindow"
 
   shutdown_vm:
     needs: run_script
