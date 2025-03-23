@@ -58,18 +58,10 @@ jobs:
           "
 
           echo "Running script as Admin and streaming logs..."
-          powershell -ExecutionPolicy Bypass -Command "
-            Start-Process -FilePath 'powershell.exe' `
-              -ArgumentList '-ExecutionPolicy Bypass -NoProfile -File `"C:\Projects\Build-script.ps1`"' `
-              -Verb RunAs `
-              -Wait `
-              -RedirectStandardOutput 'C:\Projects\Build-output.log' `
-              -RedirectStandardError 'C:\Projects\Build-error.log'
-          "
-
-          echo "🔍 Checking script output..."
-          type C:\Projects\Build-output.log
-          type C:\Projects\Build-error.log
+          powershell -ExecutionPolicy Bypass -Command "& {
+            Start-Process powershell.exe -ArgumentList '-ExecutionPolicy Bypass -NoProfile -File `"C:\Projects\Build-script.ps1`"' -Verb RunAs -Wait;
+            Get-Content 'C:\Projects\Build-script.log'
+          }"
 
   shutdown_vm:
     needs: run_script
