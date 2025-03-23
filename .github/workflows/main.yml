@@ -51,10 +51,19 @@ jobs:
 
       - name: Run PowerShell Script on Windows VM as Administrator
         run: |
-          echo "Setting Build Number in a file"
-          powershell -ExecutionPolicy Bypass -Command `"Set-Content -Path C:\Projects\BuildNumber.txt -Value '${{ env.BUILD_No }}'`"
-          echo "Running script as Admin"
-          powershell -ExecutionPolicy Bypass -Command "Start-Process -FilePath 'powershell.exe' -ArgumentList '-ExecutionPolicy Bypass -NoProfile -File C:\Projects\Build-script.ps1' -Verb RunAs -Wait -NoNewWindow"
+          echo "Setting Build Number in a file..."
+          powershell -ExecutionPolicy Bypass -Command "
+          Set-Content -Path 'C:\Projects\BuildNumber.txt' -Value '${{ env.BUILD_No }}';
+          Write-Host '✅ Build number stored in C:\Projects\BuildNumber.txt';
+          "
+
+          echo "Running script as Admin and streaming logs..."
+          powershell -ExecutionPolicy Bypass -Command "
+            Start-Process -FilePath 'powershell.exe' -ArgumentList '-ExecutionPolicy Bypass -NoProfile -File C:\Projects\Build-script.ps1' -Verb RunAs -Wait -PassThru | Out-File C:\Projects\Build-log.txt;
+          "
+          
+          echo "Streaming log output..."
+          powershell -ExecutionPolicy Bypass -Command "Get-Content 'C:\Projects\Build-log.txt' -Wait"
 
   shutdown_vm:
     needs: run_script
